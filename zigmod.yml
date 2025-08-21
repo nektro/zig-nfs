@@ -1,0 +1,8 @@
+id: vph9l0hxpezeda5mq2rp4xnr1372sm0nhhw4bspdx4qtvu0d
+name: nfs
+main: nfs.zig
+license: MPL-2.0
+description: Nektro's Filesystem, an alternative to std.fs
+min_zig_version: 0.14.0
+min_zigmod_version: r96
+dependencies:
