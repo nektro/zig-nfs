@@ -6,3 +6,6 @@ description: Nektro's Filesystem, an alternative to std.fs
 min_zig_version: 0.14.0
 min_zigmod_version: r96
 dependencies:
+  - src: git https://github.com/nektro/zig-sys-libc
+  - src: git https://github.com/nektro/zig-nio
+  - src: git https://github.com/nektro/zig-errno
