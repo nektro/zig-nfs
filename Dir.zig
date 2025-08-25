@@ -28,3 +28,8 @@ pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
 pub const OpenDirFlags = packed struct {
     //
 };
+
+/// temporary method for interacting with other std apis we don't have our own version of
+pub fn to_std(self: Dir) std.fs.Dir {
+    return .{ .fd = @intFromEnum(self.fd) };
+}
