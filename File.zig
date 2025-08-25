@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 const sys_libc = @import("sys-libc");
 const nio = @import("nio");
 const errno = @import("errno");
+const time = @import("time");
 
 const nfs = @import("./nfs.zig");
 const Dir = nfs.Dir;
@@ -37,3 +38,45 @@ pub fn anyReadable(self: File) nio.AnyReadable {
         .state = @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(@intFromEnum(self.fd)))))),
     };
 }
+
+pub fn stat(self: File) !Stat {
+    const st = try sys_libc.fstat(@intFromEnum(self.fd));
+    return .{
+        .inode = st.ino,
+        .size = @bitCast(st.size),
+        .mode = st.mode,
+        .kind = {},
+        .atime = @as(i128, st.atim.sec) * time.ns_per_s + st.atim.nsec,
+        .mtime = @as(i128, st.mtim.sec) * time.ns_per_s + st.mtim.nsec,
+        .ctime = @as(i128, st.ctim.sec) * time.ns_per_s + st.ctim.nsec,
+    };
+}
+
+pub const Stat = struct {
+    inode: INode,
+    size: u64,
+    mode: Mode,
+    kind: void, //Kind,
+    /// Last access time in nanoseconds, relative to UTC 1970-01-01.
+    atime: i128,
+    /// Last modification time in nanoseconds, relative to UTC 1970-01-01.
+    mtime: i128,
+    /// Last status/metadata change time in nanoseconds, relative to UTC 1970-01-01.
+    ctime: i128,
+};
+
+pub const INode = switch (builtin.target.os.tag) {
+    .linux,
+    => sys_libc.ino_t,
+    else => |v| @compileError("TODO: " ++ @tagName(v)),
+};
+
+pub const Mode = switch (builtin.target.os.tag) {
+    .linux,
+    => sys_libc.mode_t,
+    else => |v| @compileError("TODO: " ++ @tagName(v)),
+};
+
+pub const Kind = enum {
+    //
+};

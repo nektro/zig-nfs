@@ -9,3 +9,4 @@ dependencies:
   - src: git https://github.com/nektro/zig-sys-libc
   - src: git https://github.com/nektro/zig-nio
   - src: git https://github.com/nektro/zig-errno
+  - src: git https://github.com/nektro/zig-time
