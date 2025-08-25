@@ -19,7 +19,7 @@ pub const ReadError = switch (builtin.target.os.tag) {
     => errno.Error,
     else => @compileError("TODO"),
 };
-pub usingnamespace nio.Readable(@This());
+pub usingnamespace nio.Readable(@This(), ._bare);
 pub fn read(self: File, buffer: []u8) ReadError!usize {
     return sys_libc.read(@intFromEnum(self.fd), buffer);
 }
