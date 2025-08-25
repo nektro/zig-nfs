@@ -8,7 +8,7 @@ const Dir = @This();
 fd: nfs.Handle,
 
 pub fn close(self: Dir) void {
-    sys_libc.close(self.fd) catch {};
+    sys_libc.close(@intFromEnum(self.fd)) catch {};
 }
 
 pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
