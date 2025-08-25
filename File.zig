@@ -52,6 +52,43 @@ pub fn stat(self: File) !Stat {
     };
 }
 
+pub fn getEndPos(self: File) !u64 {
+    return (try self.stat()).size;
+}
+
+pub fn readToEndAlloc(self: File, allocator: std.mem.Allocator, max_bytes: usize, size_hint: ?usize) ![:0]u8 {
+    var array_list = try std.ArrayList(u8).initCapacity(allocator, @min(size_hint orelse 1023, max_bytes) + 1);
+    defer array_list.deinit();
+    self.readAllArrayList(&array_list, max_bytes) catch |err| switch (err) {
+        error.StreamTooLong => return error.FileTooBig,
+        else => |e| return e,
+    };
+    return try array_list.toOwnedSliceSentinel(0);
+}
+
+pub fn readAllArrayList(self: File, array_list: *std.ArrayList(u8), max_append_size: usize) anyerror!void {
+    try array_list.ensureTotalCapacity(@min(max_append_size, 4096));
+    const original_len = array_list.items.len;
+    var start_index: usize = original_len;
+    while (true) {
+        array_list.expandToCapacity();
+        const dest_slice = array_list.items[start_index..];
+        const bytes_read = try self.readAll(dest_slice);
+        start_index += bytes_read;
+
+        if (start_index - original_len > max_append_size) {
+            array_list.shrinkAndFree(original_len + max_append_size);
+            return error.StreamTooLong;
+        }
+        if (bytes_read != dest_slice.len) {
+            array_list.shrinkAndFree(start_index);
+            return;
+        }
+        // This will trigger ArrayList to expand superlinearly at whatever its growth rate is.
+        try array_list.ensureTotalCapacity(start_index + 1);
+    }
+}
+
 pub const Stat = struct {
     inode: INode,
     size: u64,

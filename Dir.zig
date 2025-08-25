@@ -33,3 +33,10 @@ pub const OpenDirFlags = packed struct {
 pub fn to_std(self: Dir) std.fs.Dir {
     return .{ .fd = @intFromEnum(self.fd) };
 }
+
+pub fn readFileAlloc(self: Dir, allocator: std.mem.Allocator, file_path: [:0]const u8, max_bytes: usize) ![:0]u8 {
+    var file = try self.openFile(file_path, .{});
+    defer file.close();
+    const stat_size = std.math.cast(usize, try file.getEndPos()) orelse return error.FileTooBig;
+    return file.readToEndAlloc(allocator, max_bytes, stat_size);
+}
