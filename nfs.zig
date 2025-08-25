@@ -14,3 +14,15 @@ pub const Handle = switch (builtin.target.os.tag) {
 pub fn cwd() Dir {
     return .{ .fd = @enumFromInt(sys_libc.AT.FDCWD) };
 }
+
+pub fn stdin() File {
+    return .{ .fd = @enumFromInt(0) };
+}
+
+pub fn stdout() File {
+    return .{ .fd = @enumFromInt(1) };
+}
+
+pub fn stderr() File {
+    return .{ .fd = @enumFromInt(2) };
+}
