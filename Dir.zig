@@ -19,3 +19,12 @@ pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
 pub const OpenFileFlags = packed struct {
     //
 };
+
+pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
+    _ = flags;
+    return .{ .fd = @enumFromInt(try sys_libc.openat(@intFromEnum(self.fd), sub_path.ptr, sys_libc.O.RDONLY | sys_libc.O.DIRECTORY)) };
+}
+
+pub const OpenDirFlags = packed struct {
+    //
+};
