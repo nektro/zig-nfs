@@ -27,14 +27,16 @@ pub fn read(self: File, buffer: []u8) ReadError!usize {
 
 pub fn anyReadable(self: File) nio.AnyReadable {
     const S = struct {
-        fn foo(s: *allowzero anyopaque, buffer: []u8) anyerror!usize {
+        fn read(s: *allowzero anyopaque, buffer: []u8) anyerror!usize {
             const fd: nfs.Handle = @enumFromInt(@intFromPtr(s));
             const f: File = .{ .fd = fd };
             return f.read(buffer);
         }
     };
     return .{
-        .readFn = S.foo,
+        .vtable = &.{
+            .read = S.read,
+        },
         .state = @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(@intFromEnum(self.fd)))))),
     };
 }
