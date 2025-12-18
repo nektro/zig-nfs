@@ -47,6 +47,17 @@ pub fn anyReadable(self: File) nio.AnyReadable {
 pub fn stat(self: File) !Stat {
     if (os != .linux) @compileError("TODO: File.stat");
     const st = try sys_linux.fstat(@intFromEnum(self.fd));
+    if (builtin.target.cpu.arch.isMIPS64()) {
+        return .{
+            .inode = st.ino,
+            .size = @bitCast(st.size),
+            .mode = st.mode,
+            .kind = {},
+            .atime = @as(i128, st.atim) * time.ns_per_s + st.atim_nsec,
+            .mtime = @as(i128, st.mtim) * time.ns_per_s + st.mtim_nsec,
+            .ctime = @as(i128, st.ctim) * time.ns_per_s + st.ctim_nsec,
+        };
+    }
     return .{
         .inode = st.ino,
         .size = @bitCast(st.size),
