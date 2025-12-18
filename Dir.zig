@@ -1,19 +1,24 @@
 const std = @import("std");
-const sys_libc = @import("sys-libc");
+const builtin = @import("builtin");
+const sys_linux = @import("sys-linux");
 
 const nfs = @import("./nfs.zig");
 const File = nfs.File;
 const Dir = @This();
 
+const os = builtin.target.os.tag;
+
 fd: nfs.Handle,
 
 pub fn close(self: Dir) void {
-    sys_libc.close(@intFromEnum(self.fd)) catch {};
+    if (os == .linux)
+        sys_linux.close(@intFromEnum(self.fd)) catch {};
 }
 
 pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
     _ = flags;
-    return .{ .fd = @enumFromInt(try sys_libc.openat(@intFromEnum(self.fd), sub_path.ptr, sys_libc.O.RDONLY)) };
+    if (os == .linux)
+        return .{ .fd = @enumFromInt(try sys_linux.openat(@intFromEnum(self.fd), sub_path.ptr, sys_linux.O.RDONLY)) };
 }
 
 pub const OpenFileFlags = packed struct {
@@ -22,7 +27,8 @@ pub const OpenFileFlags = packed struct {
 
 pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
     _ = flags;
-    return .{ .fd = @enumFromInt(try sys_libc.openat(@intFromEnum(self.fd), sub_path.ptr, sys_libc.O.RDONLY | sys_libc.O.DIRECTORY)) };
+    if (os == .linux)
+        return .{ .fd = @enumFromInt(try sys_linux.openat(@intFromEnum(self.fd), sub_path.ptr, sys_linux.O.RDONLY | sys_linux.O.DIRECTORY)) };
 }
 
 pub const OpenDirFlags = packed struct {
