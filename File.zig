@@ -90,7 +90,6 @@ pub const Stat = struct {
     inode: INode,
     size: u64,
     mode: Mode,
-    kind: void, //Kind,
     /// Last access time in nanoseconds, relative to UTC 1970-01-01.
     atime: i128,
     /// Last modification time in nanoseconds, relative to UTC 1970-01-01.
@@ -120,6 +119,23 @@ pub const Stat = struct {
             };
         }
     }
+
+    pub fn kind(self: Stat) Kind {
+        if (os == .linux) {
+            const m = self.mode & sys_linux.S.IFMT;
+            switch (m) {
+                sys_linux.S.IFBLK => return .block_device,
+                sys_linux.S.IFCHR => return .character_device,
+                sys_linux.S.IFIFO => return .named_pipe,
+                sys_linux.S.IFREG => return .file,
+                sys_linux.S.IFDIR => return .directory,
+                sys_linux.S.IFLNK => return .symlink,
+                sys_linux.S.IFSOCK => return .unix_socket,
+                else => {},
+            }
+            return .unknown;
+        }
+    }
 };
 
 pub const INode = switch (builtin.target.os.tag) {
@@ -135,5 +151,12 @@ pub const Mode = switch (builtin.target.os.tag) {
 };
 
 pub const Kind = enum {
-    //
+    block_device,
+    character_device,
+    named_pipe,
+    file,
+    directory,
+    symlink,
+    unix_socket,
+    unknown,
 };
