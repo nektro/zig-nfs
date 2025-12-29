@@ -94,3 +94,13 @@ pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
         component = it.next() orelse return;
     }
 }
+
+pub fn makeOpenPath(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
+    return self.openDir(sub_path, flags) catch |err| switch (err) {
+        error.ENOENT => {
+            try self.makePath(sub_path);
+            return self.openDir(sub_path, flags);
+        },
+        else => |e| return e,
+    };
+}
