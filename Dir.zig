@@ -58,3 +58,8 @@ pub fn makeDir(self: Dir, sub_path: [:0]const u8) !void {
     if (os == .linux)
         try sys_linux.mkdirat(@intFromEnum(self.fd), sub_path, 0o755);
 }
+
+pub fn statFile(self: Dir, sub_path: [:0]const u8) !File.Stat {
+    if (os == .linux)
+        return .fromPosix(try sys_linux.fstatat(@intFromEnum(self.fd), sub_path, 0));
+}
