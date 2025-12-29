@@ -46,27 +46,7 @@ pub fn anyReadable(self: File) nio.AnyReadable {
 
 pub fn stat(self: File) !Stat {
     if (os != .linux) @compileError("TODO: File.stat");
-    const st = try sys_linux.fstat(@intFromEnum(self.fd));
-    if (builtin.target.cpu.arch.isMIPS64()) {
-        return .{
-            .inode = st.ino,
-            .size = @bitCast(st.size),
-            .mode = st.mode,
-            .kind = {},
-            .atime = @as(i128, st.atim) * time.ns_per_s + st.atim_nsec,
-            .mtime = @as(i128, st.mtim) * time.ns_per_s + st.mtim_nsec,
-            .ctime = @as(i128, st.ctim) * time.ns_per_s + st.ctim_nsec,
-        };
-    }
-    return .{
-        .inode = st.ino,
-        .size = @bitCast(st.size),
-        .mode = st.mode,
-        .kind = {},
-        .atime = @as(i128, st.atim.sec) * time.ns_per_s + st.atim.nsec,
-        .mtime = @as(i128, st.mtim.sec) * time.ns_per_s + st.mtim.nsec,
-        .ctime = @as(i128, st.ctim.sec) * time.ns_per_s + st.ctim.nsec,
-    };
+    return .fromPosix(try sys_linux.fstat(@intFromEnum(self.fd)));
 }
 
 pub fn getEndPos(self: File) !u64 {
@@ -117,6 +97,29 @@ pub const Stat = struct {
     mtime: i128,
     /// Last status/metadata change time in nanoseconds, relative to UTC 1970-01-01.
     ctime: i128,
+
+    pub fn fromPosix(st: sys_linux.struct_stat) Stat {
+        if (os == .linux) {
+            if (builtin.target.cpu.arch.isMIPS64()) {
+                return .{
+                    .inode = st.ino,
+                    .size = @bitCast(st.size),
+                    .mode = st.mode,
+                    .atime = @as(i128, st.atim) * time.ns_per_s + st.atim_nsec,
+                    .mtime = @as(i128, st.mtim) * time.ns_per_s + st.mtim_nsec,
+                    .ctime = @as(i128, st.ctim) * time.ns_per_s + st.ctim_nsec,
+                };
+            }
+            return .{
+                .inode = st.ino,
+                .size = @bitCast(st.size),
+                .mode = st.mode,
+                .atime = @as(i128, st.atim.sec) * time.ns_per_s + st.atim.nsec,
+                .mtime = @as(i128, st.mtim.sec) * time.ns_per_s + st.mtim.nsec,
+                .ctime = @as(i128, st.ctim.sec) * time.ns_per_s + st.ctim.nsec,
+            };
+        }
+    }
 };
 
 pub const INode = switch (builtin.target.os.tag) {
