@@ -30,6 +30,13 @@ pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
     if (os == .linux)
         return .{ .fd = @enumFromInt(try sys_linux.openat(@intFromEnum(self.fd), sub_path.ptr, sys_linux.O.RDONLY | sys_linux.O.DIRECTORY)) };
 }
+pub fn openDirC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir {
+    std.debug.assert(sub_path.len <= sys_linux.NAME_MAX);
+    var buf: [sys_linux.NAME_MAX + 1]u8 = undefined;
+    @memcpy(buf[0..sub_path.len], sub_path);
+    buf[sub_path.len] = 0;
+    return openDir(self, buf[0..sub_path.len :0], flags);
+}
 
 pub const OpenDirFlags = packed struct {
     //
