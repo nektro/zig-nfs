@@ -63,3 +63,34 @@ pub fn statFile(self: Dir, sub_path: [:0]const u8) !File.Stat {
     if (os == .linux)
         return .fromPosix(try sys_linux.fstatat(@intFromEnum(self.fd), sub_path, 0));
 }
+
+pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
+    var it = try std.fs.path.componentIterator(sub_path);
+    var component = it.last() orelse return;
+    var zuffer: [sys_linux.NAME_MAX + 1]u8 = undefined;
+    while (true) {
+        @memcpy(zuffer[0..component.path.len], component.path);
+        zuffer[component.path.len] = 0;
+        self.makeDir(zuffer[0..component.path.len :0]) catch |err| switch (err) {
+            error.EEXIST => {
+                // stat the file and return an error if it's not a directory
+                // this is important because otherwise a dangling symlink
+                // could cause an infinite loop
+                check_dir: {
+                    // workaround for windows, see https://github.com/ziglang/zig/issues/16738
+                    const fstat = self.statFile(zuffer[0..component.path.len :0]) catch |stat_err| switch (stat_err) {
+                        error.EISDIR => break :check_dir,
+                        else => |e| return e,
+                    };
+                    if (fstat.kind() != .directory) return error.NotDir;
+                }
+            },
+            error.ENOENT => |e| {
+                component = it.previous() orelse return e;
+                continue;
+            },
+            else => |e| return e,
+        };
+        component = it.next() orelse return;
+    }
+}
