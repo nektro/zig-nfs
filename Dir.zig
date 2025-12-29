@@ -53,3 +53,8 @@ pub fn readFileAlloc(self: Dir, allocator: std.mem.Allocator, file_path: [:0]con
     const stat_size = std.math.cast(usize, try file.getEndPos()) orelse return error.FileTooBig;
     return file.readToEndAlloc(allocator, max_bytes, stat_size);
 }
+
+pub fn makeDir(self: Dir, sub_path: [:0]const u8) !void {
+    if (os == .linux)
+        try sys_linux.mkdirat(@intFromEnum(self.fd), sub_path, 0o755);
+}
