@@ -12,6 +12,7 @@ const os = builtin.target.os.tag;
 
 fd: nfs.Handle,
 
+// Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: File) void {
     if (os == .linux)
         sys_linux.close(@intFromEnum(self.fd)) catch {};
