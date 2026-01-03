@@ -8,8 +8,7 @@ pub const File = @import("./File.zig");
 const os = builtin.target.os.tag;
 
 pub const Handle = switch (os) {
-    .linux,
-    => enum(c_int) { _ },
+    .linux => enum(c_int) { _ },
     else => @compileError("TODO"),
 };
 

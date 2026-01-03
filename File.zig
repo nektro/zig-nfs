@@ -18,8 +18,7 @@ pub fn close(self: File) void {
 }
 
 pub const ReadError = switch (builtin.target.os.tag) {
-    .linux,
-    => sys_linux.errno.Error,
+    .linux => sys_linux.errno.Error,
     else => @compileError("TODO"),
 };
 pub usingnamespace nio.Readable(@This(), ._bare);
@@ -37,9 +36,7 @@ pub fn anyReadable(self: File) nio.AnyReadable {
         }
     };
     return .{
-        .vtable = &.{
-            .read = S.read,
-        },
+        .vtable = &.{ .read = S.read },
         .state = @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(@intFromEnum(self.fd)))))),
     };
 }
