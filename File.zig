@@ -10,6 +10,11 @@ const File = @This();
 
 const os = builtin.target.os.tag;
 
+const sys = switch (os) {
+    .linux => sys_linux,
+    else => unreachable,
+};
+
 fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
@@ -84,6 +89,12 @@ pub fn readAllArrayList(self: File, array_list: *std.ArrayList(u8), max_append_s
     }
 }
 
+pub const WriteError = sys.errno.Error;
+pub usingnamespace nio.Writable(@This(), ._bare);
+pub fn write(self: File, buffer: []const u8) WriteError!usize {
+    return sys.write(@intFromEnum(self.fd), buffer);
+}
+
 pub const Stat = struct {
     inode: INode,
     size: u64,
@@ -137,14 +148,12 @@ pub const Stat = struct {
 };
 
 pub const INode = switch (builtin.target.os.tag) {
-    .linux,
-    => sys_linux.ino_t,
+    .linux => sys_linux.ino_t,
     else => |v| @compileError("TODO: " ++ @tagName(v)),
 };
 
 pub const Mode = switch (builtin.target.os.tag) {
-    .linux,
-    => sys_linux.mode_t,
+    .linux => sys_linux.mode_t,
     else => |v| @compileError("TODO: " ++ @tagName(v)),
 };
 
