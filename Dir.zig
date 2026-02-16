@@ -8,6 +8,11 @@ const Dir = @This();
 
 const os = builtin.target.os.tag;
 
+const sys = switch (os) {
+    .linux => sys_linux,
+    else => unreachable,
+};
+
 fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
@@ -104,4 +109,8 @@ pub fn makeOpenPath(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir
         },
         else => |e| return e,
     };
+}
+
+pub fn readlink(self: Dir, noalias sub_path: [:0]const u8, noalias buf: []u8) ![:0]u8 {
+    return sys.readlinkat(@intFromEnum(self.fd), sub_path, buf);
 }
