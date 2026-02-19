@@ -94,6 +94,9 @@ pub usingnamespace nio.Writable(@This(), ._bare);
 pub fn write(self: File, buffer: []const u8) WriteError!usize {
     return sys.write(@intFromEnum(self.fd), buffer);
 }
+pub fn writev(self: File, iovec: []const sys.struct_iovec) WriteError!usize {
+    return sys.writev(@intFromEnum(self.fd), iovec);
+}
 
 pub const Stat = struct {
     inode: INode,
