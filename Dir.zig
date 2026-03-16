@@ -110,3 +110,42 @@ pub fn makeOpenPath(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir
 pub fn readlink(self: Dir, noalias sub_path: [:0]const u8, noalias buf: []u8) ![:0]u8 {
     return sys.readlinkat(@intFromEnum(self.fd), sub_path, buf);
 }
+
+pub fn iterate(self: Dir) Iterator {
+    return .{
+        .dir = self,
+        .buf = undefined,
+        .idx = 0,
+        .len = 0,
+    };
+}
+
+pub const Iterator = struct {
+    dir: Dir,
+    buf: [1024]u8,
+    idx: usize,
+    len: usize,
+
+    pub fn next(iter: *Iterator) !?Entry {
+        if (iter.idx == iter.len) {
+            const len = try sys.getdents(@intFromEnum(iter.dir.fd), &iter.buf);
+            if (len == 0) return null;
+            iter.len = len;
+        }
+        const ent: *align(1) sys.struct_dirent = @ptrCast(&iter.buf[iter.idx]);
+        iter.idx += ent.reclen;
+        const name_nidx = std.mem.indexOfScalar(u8, &ent.name, 0).?;
+        const name = ent.name[0..name_nidx :0];
+        if (std.mem.eql(u8, name, ".")) return next(iter);
+        if (std.mem.eql(u8, name, "..")) return next(iter);
+        return .{
+            .name = name,
+            .type = ent.type,
+        };
+    }
+
+    pub const Entry = struct {
+        name: [:0]const u8,
+        type: sys.DT,
+    };
+};
