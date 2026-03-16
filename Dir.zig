@@ -30,8 +30,9 @@ pub const OpenFileFlags = packed struct {
 };
 
 pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
+    const oflag: c_int = sys.O.RDONLY | sys.O.DIRECTORY;
     _ = flags;
-    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, sys.O.RDONLY | sys.O.DIRECTORY)) };
+    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag)) };
 }
 pub fn openDirC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir {
     std.debug.assert(sub_path.len <= sys.NAME_MAX);
