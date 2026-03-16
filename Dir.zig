@@ -17,14 +17,12 @@ fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: Dir) void {
-    if (os == .linux)
-        sys_linux.close(@intFromEnum(self.fd)) catch {};
+    return sys.close(@intFromEnum(self.fd)) catch {};
 }
 
 pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
     _ = flags;
-    if (os == .linux)
-        return .{ .fd = @enumFromInt(try sys_linux.openat(@intFromEnum(self.fd), sub_path.ptr, sys_linux.O.RDONLY)) };
+    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, sys.O.RDONLY)) };
 }
 
 pub const OpenFileFlags = packed struct {
@@ -33,12 +31,11 @@ pub const OpenFileFlags = packed struct {
 
 pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
     _ = flags;
-    if (os == .linux)
-        return .{ .fd = @enumFromInt(try sys_linux.openat(@intFromEnum(self.fd), sub_path.ptr, sys_linux.O.RDONLY | sys_linux.O.DIRECTORY)) };
+    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, sys.O.RDONLY | sys.O.DIRECTORY)) };
 }
 pub fn openDirC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir {
-    std.debug.assert(sub_path.len <= sys_linux.NAME_MAX);
-    var buf: [sys_linux.NAME_MAX + 1]u8 = undefined;
+    std.debug.assert(sub_path.len <= sys.NAME_MAX);
+    var buf: [sys.NAME_MAX + 1]u8 = undefined;
     @memcpy(buf[0..sub_path.len], sub_path);
     buf[sub_path.len] = 0;
     return openDir(self, buf[0..sub_path.len :0], flags);
@@ -61,19 +58,17 @@ pub fn readFileAlloc(self: Dir, allocator: std.mem.Allocator, file_path: [:0]con
 }
 
 pub fn makeDir(self: Dir, sub_path: [:0]const u8) !void {
-    if (os == .linux)
-        try sys_linux.mkdirat(@intFromEnum(self.fd), sub_path, 0o755);
+    try sys.mkdirat(@intFromEnum(self.fd), sub_path, 0o755);
 }
 
 pub fn statFile(self: Dir, sub_path: [:0]const u8) !File.Stat {
-    if (os == .linux)
-        return .fromPosix(try sys_linux.fstatat(@intFromEnum(self.fd), sub_path, 0));
+    return .fromPosix(try sys.fstatat(@intFromEnum(self.fd), sub_path, 0));
 }
 
 pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
     var it = try std.fs.path.componentIterator(sub_path);
     var component = it.last() orelse return;
-    var zuffer: [sys_linux.NAME_MAX + 1]u8 = undefined;
+    var zuffer: [sys.NAME_MAX + 1]u8 = undefined;
     while (true) {
         @memcpy(zuffer[0..component.path.len], component.path);
         zuffer[component.path.len] = 0;
