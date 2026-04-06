@@ -149,3 +149,18 @@ pub const Iterator = struct {
         type: sys.DT,
     };
 };
+
+pub fn rename(self: Dir, old: [:0]const u8, new: [:0]const u8) !void {
+    return sys.renameat(@intFromEnum(self.fd), old.ptr, @intFromEnum(self.fd), new.ptr);
+}
+pub fn renameC(self: Dir, old: []const u8, new: []const u8) !void {
+    std.debug.assert(old.len <= sys.NAME_MAX);
+    std.debug.assert(new.len <= sys.NAME_MAX);
+    var old_buf: [sys.NAME_MAX + 1]u8 = undefined;
+    var new_buf: [sys.NAME_MAX + 1]u8 = undefined;
+    @memcpy(old_buf[0..old.len], old);
+    @memcpy(new_buf[0..new.len], new);
+    old_buf[old.len] = 0;
+    new_buf[new.len] = 0;
+    return rename(self, old_buf[0..old.len :0], new_buf[0..new.len :0]);
+}
