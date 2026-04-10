@@ -130,6 +130,7 @@ pub const Iterator = struct {
         if (iter.idx == iter.len) {
             const len = try sys.getdents(@intFromEnum(iter.dir.fd), &iter.buf);
             if (len == 0) return null;
+            iter.idx = 0;
             iter.len = len;
         }
         const ent: *align(1) sys.struct_dirent = @ptrCast(&iter.buf[iter.idx]);
