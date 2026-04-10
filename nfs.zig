@@ -36,3 +36,9 @@ pub fn stderr() File {
 pub fn memfd_create(name: [*:0]const u8, flags: c_uint) !File {
     return .{ .fd = @enumFromInt(try sys.memfd_create(name, flags)) };
 }
+
+/// Free a region of memory allocated with mmap.
+/// Any error calling munmap is ignored.
+pub fn munmap(region: []const u8) void {
+    return sys.munmap(region.ptr, region.len) catch {};
+}

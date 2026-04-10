@@ -170,3 +170,16 @@ pub const Kind = enum {
     unix_socket,
     unknown,
 };
+
+/// Maps file content into memory with a single syscall.
+/// If length is null it will also call stat.
+pub fn mmap(self: File) ![]const u8 {
+    return sys.mmap(
+        null,
+        (try self.stat()).size,
+        sys.PROT.READ,
+        sys.MAP.PRIVATE,
+        @intFromEnum(self.fd),
+        0,
+    );
+}
