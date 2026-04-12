@@ -17,6 +17,8 @@ pub const Handle = switch (os) {
     else => unreachable,
 };
 
+pub const Error = sys.errno.Error;
+
 pub fn cwd() Dir {
     return .{ .fd = @enumFromInt(sys.AT.FDCWD) };
 }
