@@ -151,6 +151,99 @@ pub const Iterator = struct {
     };
 };
 
+pub fn walk(self: Dir, allocator: std.mem.Allocator) !Walker {
+    var stack: std.ArrayListUnmanaged(Walker.StackItem) = .empty;
+
+    try stack.append(allocator, .{
+        .iter = self.iterate(),
+        .dirname_len = 0,
+    });
+
+    return .{
+        .allocator = allocator,
+        .stack = stack,
+        .name_buffer = .empty,
+    };
+}
+
+pub const Walker = struct {
+    allocator: std.mem.Allocator,
+    stack: std.ArrayListUnmanaged(StackItem),
+    name_buffer: std.ArrayListUnmanaged(u8),
+
+    pub const Entry = struct {
+        dir: Dir,
+        basename: [:0]const u8,
+        path: [:0]const u8,
+        type: sys.DT,
+    };
+
+    const StackItem = struct {
+        iter: Dir.Iterator,
+        dirname_len: usize,
+    };
+
+    pub fn next(self: *Walker) !?Walker.Entry {
+        const gpa = self.allocator;
+        while (self.stack.items.len != 0) {
+            var top = &self.stack.items[self.stack.items.len - 1];
+            var containing = top;
+            var dirname_len = top.dirname_len;
+            if (top.iter.next() catch |err| {
+                var item = self.stack.pop().?;
+                if (self.stack.items.len != 0) item.iter.dir.close();
+                return err;
+            }) |base| {
+                self.name_buffer.shrinkRetainingCapacity(dirname_len);
+                if (self.name_buffer.items.len != 0) {
+                    try self.name_buffer.append(gpa, std.fs.path.sep);
+                    dirname_len += 1;
+                }
+                try self.name_buffer.ensureUnusedCapacity(gpa, base.name.len + 1);
+                self.name_buffer.appendSliceAssumeCapacity(base.name);
+                self.name_buffer.appendAssumeCapacity(0);
+                if (base.type == .DIR) {
+                    var new_dir = top.iter.dir.openDir(base.name, .{}) catch |err| switch (err) {
+                        error.ENAMETOOLONG => unreachable, // no path sep in base.name
+                        else => |e| return e,
+                    };
+                    {
+                        errdefer new_dir.close();
+                        try self.stack.append(gpa, .{
+                            .iter = new_dir.iterate(), // was iterateAssumeFirstIteration
+                            .dirname_len = self.name_buffer.items.len - 1,
+                        });
+                        top = &self.stack.items[self.stack.items.len - 1];
+                        containing = &self.stack.items[self.stack.items.len - 2];
+                    }
+                }
+                return .{
+                    .dir = containing.iter.dir,
+                    .basename = self.name_buffer.items[dirname_len .. self.name_buffer.items.len - 1 :0],
+                    .path = self.name_buffer.items[0 .. self.name_buffer.items.len - 1 :0],
+                    .type = base.type,
+                };
+            } else {
+                var item = self.stack.pop().?;
+                if (self.stack.items.len != 0) item.iter.dir.close();
+            }
+        }
+        return null;
+    }
+
+    pub fn deinit(self: *Walker) void {
+        const gpa = self.allocator;
+        // Close any remaining directories except the initial one (which is always at index 0)
+        if (self.stack.items.len > 1) {
+            for (self.stack.items[1..]) |*item| {
+                item.iter.dir.close();
+            }
+        }
+        self.stack.deinit(gpa);
+        self.name_buffer.deinit(gpa);
+    }
+};
+
 pub fn rename(self: Dir, old: [:0]const u8, new: [:0]const u8) !void {
     return sys.renameat(@intFromEnum(self.fd), old.ptr, @intFromEnum(self.fd), new.ptr);
 }
