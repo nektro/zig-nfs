@@ -258,3 +258,24 @@ pub fn renameC(self: Dir, old: []const u8, new: []const u8) !void {
     new_buf[new.len] = 0;
     return rename(self, old_buf[0..old.len :0], new_buf[0..new.len :0]);
 }
+
+pub fn createFile(self: Dir, sub_path: [:0]const u8, flags: CreateFlags) !File {
+    var oflag: c_int = 0;
+    oflag |= if (flags.read) sys.O.RDWR else sys.O.WRONLY;
+    oflag |= sys.O.CREAT;
+    if (flags.truncate) oflag |= sys.O.TRUNC;
+    if (flags.exclusive) oflag |= sys.O.EXCL;
+    oflag |= sys.O.CLOEXEC;
+    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag)) };
+}
+
+pub const CreateFlags = packed struct {
+    /// Whether the file will be created with read access.
+    read: bool = false,
+    /// If the file already exists, and is a regular file, and the access mode allows writing, it will be truncated to length 0.
+    truncate: bool = true,
+    /// Ensures that this open call creates the file, otherwise causes `error.PathAlreadyExists` to be returned.
+    exclusive: bool = false,
+    /// The file system mode the file will be created with.
+    mode: File.Mode = 0o666,
+};
