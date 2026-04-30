@@ -46,9 +46,12 @@ pub fn munmap(region: []const u8) void {
 }
 
 pub fn mkdtemp() !Dir {
-    var template = "/tmp/tmp.XXXXXX\x00".*;
-    const path_p = try sys.mkdtemp(template[0 .. template.len - 1 :0].ptr);
-    const path = std.mem.sliceTo(path_p, 0);
-    std.log.debug("path: {s}", .{path});
-    return cwd().openDir(path, .{});
+    var template = "/tmp/tmp.XXXXXXXXXX\x00".*;
+    const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    var buf: [10]u8 = @splat(0);
+    const rand = try sys.getrandom(&buf, 0);
+    if (rand.len != 10) return error.EAGAIN;
+    for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
+    const path = template[0 .. template.len - 1 :0];
+    return cwd().makeOpenPath(path, .{});
 }
