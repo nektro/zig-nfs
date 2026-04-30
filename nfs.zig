@@ -44,3 +44,11 @@ pub fn memfd_create(name: [*:0]const u8, flags: c_uint) !File {
 pub fn munmap(region: []const u8) void {
     return sys.munmap(region.ptr, region.len) catch {};
 }
+
+pub fn mkdtemp() !Dir {
+    var template = "/tmp/tmp.XXXXXX\x00".*;
+    const path_p = try sys.mkdtemp(template[0 .. template.len - 1 :0].ptr);
+    const path = std.mem.sliceTo(path_p, 0);
+    std.log.debug("path: {s}", .{path});
+    return cwd().openDir(path, .{});
+}
