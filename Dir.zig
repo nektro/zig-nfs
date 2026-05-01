@@ -266,7 +266,7 @@ pub fn createFile(self: Dir, sub_path: [:0]const u8, flags: CreateFlags) !File {
     if (flags.truncate) oflag |= sys.O.TRUNC;
     if (flags.exclusive) oflag |= sys.O.EXCL;
     oflag |= sys.O.CLOEXEC;
-    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag)) };
+    return .{ .fd = @enumFromInt(try sys.openat4(@intFromEnum(self.fd), sub_path.ptr, oflag, flags.mode)) };
 }
 
 pub const CreateFlags = packed struct {
