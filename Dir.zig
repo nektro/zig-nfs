@@ -274,7 +274,7 @@ pub const CreateFlags = packed struct {
     read: bool = false,
     /// If the file already exists, and is a regular file, and the access mode allows writing, it will be truncated to length 0.
     truncate: bool = true,
-    /// Ensures that this open call creates the file, otherwise causes `error.PathAlreadyExists` to be returned.
+    /// Ensures that this open call creates the file, otherwise causes `error.EEXIST` to be returned.
     exclusive: bool = false,
     /// The file system mode the file will be created with.
     mode: File.Mode = 0o666,
