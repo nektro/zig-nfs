@@ -18,6 +18,8 @@ pub const Handle = switch (os) {
 };
 
 pub const Error = sys.errno.Error;
+pub const PATH_MAX = sys.PATH_MAX;
+pub const NAME_MAX = sys.NAME_MAX;
 
 pub fn cwd() Dir {
     return .{ .fd = @enumFromInt(sys.AT.FDCWD) };
