@@ -55,3 +55,14 @@ pub fn mkdtemp() !Dir {
     const path = template[0 .. template.len - 1 :0];
     return cwd().makeOpenPath(path, .{});
 }
+
+pub fn mktemp(flags: Dir.CreateFlags) !File {
+    var template = "/tmp/tmp.XXXXXXXXXX\x00".*;
+    const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    var buf: [10]u8 = @splat(0);
+    const rand = try sys.getrandom(&buf, 0);
+    if (rand.len != 10) return error.EAGAIN;
+    for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
+    const path = template[0 .. template.len - 1 :0];
+    return cwd().createFile(path, flags);
+}
