@@ -183,3 +183,7 @@ pub fn mmap(self: File) ![]const u8 {
         0,
     );
 }
+
+pub fn utime(self: File, times: [2]sys.struct_timespec) !void {
+    return sys.futimens(@intFromEnum(self.fd), times);
+}
