@@ -279,3 +279,14 @@ pub const CreateFlags = packed struct {
     /// The file system mode the file will be created with.
     mode: File.Mode = 0o666,
 };
+
+pub fn access(self: Dir, sub_path: [:0]const u8, amode: AccessMode, flag: c_int) !void {
+    return sys.faccessat(@intFromEnum(self.fd), sub_path, @bitCast(amode), flag);
+}
+
+pub const AccessMode = packed struct(c_uint) {
+    readable: bool = false,
+    writable: bool = false,
+    executable: bool = false,
+    _: u29 = 0,
+};
