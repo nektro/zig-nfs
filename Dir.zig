@@ -282,6 +282,13 @@ pub fn createFile(self: Dir, sub_path: [:0]const u8, flags: CreateFlags) !File {
     oflag |= sys.O.CLOEXEC;
     return .{ .fd = @enumFromInt(try sys.openat4(@intFromEnum(self.fd), sub_path.ptr, oflag, flags.mode)) };
 }
+pub fn createFileC(self: Dir, sub_path: []const u8, flags: CreateFlags) !File {
+    std.debug.assert(sub_path.len <= sys.PATH_MAX);
+    var buf: [sys.PATH_MAX + 1]u8 = undefined;
+    @memcpy(buf[0..sub_path.len], sub_path);
+    buf[sub_path.len] = 0;
+    return createFile(self, buf[0..sub_path.len :0], flags);
+}
 
 pub const CreateFlags = packed struct {
     /// Whether the file will be created with read access.
