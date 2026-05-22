@@ -103,6 +103,13 @@ pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
         component = it.next() orelse return;
     }
 }
+pub fn makePathC(self: Dir, sub_path: []const u8) !void {
+    std.debug.assert(sub_path.len <= sys.PATH_MAX);
+    var buf: [sys.PATH_MAX + 1]u8 = undefined;
+    @memcpy(buf[0..sub_path.len], sub_path);
+    buf[sub_path.len] = 0;
+    return makePath(self, buf[0..sub_path.len :0]);
+}
 
 pub fn makeOpenPath(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
     return self.openDir(sub_path, flags) catch |err| switch (err) {
