@@ -23,11 +23,25 @@ pub fn close(self: File) void {
         sys_linux.close(@intFromEnum(self.fd)) catch {};
 }
 
+const R = nio.Readable(@This(), ._bare);
+pub const readAll = R.readAll;
+pub const readAtLeast = R.readAtLeast;
+pub const readNoEof = R.readNoEof;
+pub const readAllAlloc = R.readAllAlloc;
+pub const readArray = R.readArray;
+pub const readByte = R.readByte;
+pub const readUntilDelimiterArrayList = R.readUntilDelimiterArrayList;
+pub const readUntilDelimiterAlloc = R.readUntilDelimiterAlloc;
+pub const readUntilDelimitersBuf = R.readUntilDelimitersBuf;
+pub const readUntilDelimitersArrayList = R.readUntilDelimitersArrayList;
+pub const readAlloc = R.readAlloc;
+pub const readInt = R.readInt;
+pub const readUntilDelimitersAlloc = R.readUntilDelimitersAlloc;
+
 pub const ReadError = switch (builtin.target.os.tag) {
     .linux => sys_linux.errno.Error,
     else => @compileError("TODO"),
 };
-pub usingnamespace nio.Readable(@This(), ._bare);
 pub fn read(self: File, buffer: []u8) ReadError!usize {
     if (os == .linux)
         return sys_linux.read(@intFromEnum(self.fd), buffer);
@@ -89,8 +103,17 @@ pub fn readAllArrayList(self: File, array_list: *std.ArrayList(u8), max_append_s
     }
 }
 
+const W = nio.Writable(@This(), ._bare);
+pub const writeAll = W.writeAll;
+pub const writevAll = W.writevAll;
+pub const writeByteNTimes = W.writeByteNTimes;
+pub const writeNTimes = W.writeNTimes;
+pub const writeInt = W.writeInt;
+pub const writeStruct = W.writeStruct;
+pub const writeIntPretty = W.writeIntPretty;
+pub const print = W.print;
+
 pub const WriteError = sys.errno.Error;
-pub usingnamespace nio.Writable(@This(), ._bare);
 pub fn write(self: File, buffer: []const u8) WriteError!usize {
     return sys.write(@intFromEnum(self.fd), buffer);
 }
