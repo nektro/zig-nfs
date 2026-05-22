@@ -24,6 +24,13 @@ pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
     _ = flags;
     return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, sys.O.RDONLY)) };
 }
+pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
+    std.debug.assert(sub_path.len <= sys.PATH_MAX);
+    var buf: [sys.PATH_MAX + 1]u8 = undefined;
+    @memcpy(buf[0..sub_path.len], sub_path);
+    buf[sub_path.len] = 0;
+    return openFile(self, buf[0..sub_path.len :0], flags);
+}
 
 pub const OpenFileFlags = packed struct {
     //
