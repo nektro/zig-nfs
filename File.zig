@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const sys_linux = @import("sys-linux");
 const nio = @import("nio");
 const time = @import("time");
 
@@ -11,7 +10,7 @@ const File = @This();
 const os = builtin.target.os.tag;
 
 const sys = switch (os) {
-    .linux => sys_linux,
+    .linux => @import("sys-linux"),
     else => unreachable,
 };
 
@@ -19,8 +18,7 @@ fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: File) void {
-    if (os == .linux)
-        sys_linux.close(@intFromEnum(self.fd)) catch {};
+    sys.close(@intFromEnum(self.fd)) catch {};
 }
 
 const R = nio.Readable(@This(), ._bare);
@@ -38,13 +36,9 @@ pub const readAlloc = R.readAlloc;
 pub const readInt = R.readInt;
 pub const readUntilDelimitersAlloc = R.readUntilDelimitersAlloc;
 
-pub const ReadError = switch (builtin.target.os.tag) {
-    .linux => sys_linux.errno.Error,
-    else => @compileError("TODO"),
-};
+pub const ReadError = sys.errno.Error;
 pub fn read(self: File, buffer: []u8) ReadError!usize {
-    if (os == .linux)
-        return sys_linux.read(@intFromEnum(self.fd), buffer);
+    return sys.read(@intFromEnum(self.fd), buffer);
 }
 
 pub fn anyReadable(self: File) nio.AnyReadable {
@@ -62,8 +56,7 @@ pub fn anyReadable(self: File) nio.AnyReadable {
 }
 
 pub fn stat(self: File) !Stat {
-    if (os != .linux) @compileError("TODO: File.stat");
-    return .fromPosix(try sys_linux.fstat(@intFromEnum(self.fd)));
+    return .fromPosix(try sys.fstat(@intFromEnum(self.fd)));
 }
 
 pub fn getEndPos(self: File) !u64 {
@@ -132,7 +125,7 @@ pub const Stat = struct {
     /// Last status/metadata change time in nanoseconds, relative to UTC 1970-01-01.
     ctime: i128,
 
-    pub fn fromPosix(st: sys_linux.struct_stat) Stat {
+    pub fn fromPosix(st: sys.struct_stat) Stat {
         if (os == .linux) {
             if (builtin.target.cpu.arch.isMIPS64()) {
                 return .{
@@ -156,32 +149,24 @@ pub const Stat = struct {
     }
 
     pub fn kind(self: Stat) Kind {
-        if (os == .linux) {
-            const m = self.mode & sys_linux.S.IFMT;
-            switch (m) {
-                sys_linux.S.IFBLK => return .block_device,
-                sys_linux.S.IFCHR => return .character_device,
-                sys_linux.S.IFIFO => return .named_pipe,
-                sys_linux.S.IFREG => return .file,
-                sys_linux.S.IFDIR => return .directory,
-                sys_linux.S.IFLNK => return .symlink,
-                sys_linux.S.IFSOCK => return .unix_socket,
-                else => {},
-            }
-            return .unknown;
+        const m = self.mode & sys.S.IFMT;
+        switch (m) {
+            sys.S.IFBLK => return .block_device,
+            sys.S.IFCHR => return .character_device,
+            sys.S.IFIFO => return .named_pipe,
+            sys.S.IFREG => return .file,
+            sys.S.IFDIR => return .directory,
+            sys.S.IFLNK => return .symlink,
+            sys.S.IFSOCK => return .unix_socket,
+            else => {},
         }
+        return .unknown;
     }
 };
 
-pub const INode = switch (builtin.target.os.tag) {
-    .linux => sys_linux.ino_t,
-    else => |v| @compileError("TODO: " ++ @tagName(v)),
-};
+pub const INode = sys.ino_t;
 
-pub const Mode = switch (builtin.target.os.tag) {
-    .linux => sys_linux.mode_t,
-    else => |v| @compileError("TODO: " ++ @tagName(v)),
-};
+pub const Mode = sys.mode_t;
 
 pub const Kind = enum {
     block_device,

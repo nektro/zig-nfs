@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const sys_linux = @import("sys-linux");
 
 const nfs = @import("./nfs.zig");
 const File = nfs.File;
@@ -9,7 +8,7 @@ const Dir = @This();
 const os = builtin.target.os.tag;
 
 const sys = switch (os) {
-    .linux => sys_linux,
+    .linux => @import("sys-linux"),
     else => unreachable,
 };
 
