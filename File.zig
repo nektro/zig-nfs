@@ -14,6 +14,10 @@ const sys = switch (os) {
     else => unreachable,
 };
 
+pub const stdin = nfs.stdin;
+pub const stdout = nfs.stdout;
+pub const stderr = nfs.stderr;
+
 fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.

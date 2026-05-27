@@ -12,6 +12,8 @@ const sys = switch (os) {
     else => unreachable,
 };
 
+pub const cwd = nfs.cwd;
+
 fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
