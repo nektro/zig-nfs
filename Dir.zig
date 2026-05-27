@@ -21,8 +21,14 @@ pub fn close(self: Dir) void {
 }
 
 pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
-    _ = flags;
-    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, sys.O.RDONLY)) };
+    var oflag: c_int = 0;
+    oflag |= switch (flags.mode) {
+        .read_only => sys.O.RDONLY,
+        .write_only => sys.O.WRONLY,
+        .read_write => sys.O.RDWR,
+    };
+    oflag |= sys.O.CLOEXEC;
+    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag)) };
 }
 pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
     std.debug.assert(sub_path.len <= sys.PATH_MAX);
@@ -33,7 +39,7 @@ pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
 }
 
 pub const OpenFileFlags = packed struct {
-    //
+    mode: enum(u8) { read_only, write_only, read_write } = .read_only,
 };
 
 pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
