@@ -176,6 +176,8 @@ pub const Iterator = struct {
     pub const Entry = struct {
         name: [:0]const u8,
         type: sys.DT,
+
+        pub const Type = sys.DT;
     };
 };
 
