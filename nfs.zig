@@ -68,3 +68,11 @@ pub fn mktemp(flags: Dir.CreateFlags) !File {
     const path = template[0 .. template.len - 1 :0];
     return cwd().createFile(path, flags);
 }
+
+pub fn pipe2(flag: c_int) ![2]File {
+    const fds = try sys.pipe2(flag);
+    return .{
+        .{ .fd = @enumFromInt(fds[0]) },
+        .{ .fd = @enumFromInt(fds[1]) },
+    };
+}
