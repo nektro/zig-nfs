@@ -127,6 +127,13 @@ pub fn makeOpenPath(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir
         else => |e| return e,
     };
 }
+pub fn makeOpenPathC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir {
+    std.debug.assert(sub_path.len <= sys.PATH_MAX);
+    var buf: [sys.PATH_MAX + 1]u8 = undefined;
+    @memcpy(buf[0..sub_path.len], sub_path);
+    buf[sub_path.len] = 0;
+    return makeOpenPath(self, buf[0..sub_path.len :0], flags);
+}
 
 pub fn readlink(self: Dir, noalias sub_path: [:0]const u8, noalias buf: []u8) ![:0]u8 {
     return sys.readlinkat(@intFromEnum(self.fd), sub_path, buf);
