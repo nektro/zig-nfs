@@ -76,3 +76,7 @@ pub fn pipe2(flag: c_int) ![2]File {
         .{ .fd = @enumFromInt(fds[1]) },
     };
 }
+
+pub fn dup2(fd1: Handle, fd2: Handle) !void {
+    return sys.dup2(@intFromEnum(fd1), @intFromEnum(fd2));
+}
