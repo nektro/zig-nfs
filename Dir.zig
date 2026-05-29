@@ -9,6 +9,7 @@ const os = builtin.target.os.tag;
 
 const sys = switch (os) {
     .linux => @import("sys-linux"),
+    .macos => @import("sys-darwin"),
     else => unreachable,
 };
 

@@ -9,12 +9,12 @@ const os = builtin.target.os.tag;
 
 const sys = switch (os) {
     .linux => sys_linux,
+    .macos => @import("sys-darwin"),
     else => unreachable,
 };
 
-pub const Handle = switch (os) {
-    .linux => enum(c_int) { _ },
-    else => unreachable,
+pub const Handle = enum(c_int) {
+    _,
 };
 
 pub const Error = sys.errno.Error;

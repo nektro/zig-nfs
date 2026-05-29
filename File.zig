@@ -11,6 +11,7 @@ const os = builtin.target.os.tag;
 
 const sys = switch (os) {
     .linux => @import("sys-linux"),
+    .macos => @import("sys-darwin"),
     else => unreachable,
 };
 
@@ -149,6 +150,16 @@ pub const Stat = struct {
                 .atime = @as(i128, st.atim.sec) * time.ns_per_s + st.atim.nsec,
                 .mtime = @as(i128, st.mtim.sec) * time.ns_per_s + st.mtim.nsec,
                 .ctime = @as(i128, st.ctim.sec) * time.ns_per_s + st.ctim.nsec,
+            };
+        }
+        if (os == .macos) {
+            return .{
+                .inode = st.ino,
+                .size = @bitCast(st.size),
+                .mode = st.mode,
+                .atime = @as(i128, st.atimespec.sec) * time.ns_per_s + st.atimespec.nsec,
+                .mtime = @as(i128, st.mtimespec.sec) * time.ns_per_s + st.mtimespec.nsec,
+                .ctime = @as(i128, st.ctimespec.sec) * time.ns_per_s + st.ctimespec.nsec,
             };
         }
     }
