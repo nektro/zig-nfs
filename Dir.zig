@@ -146,6 +146,7 @@ pub fn iterate(self: Dir) Iterator {
         .buf = undefined,
         .idx = 0,
         .len = 0,
+        .seek = 0,
     };
 }
 
@@ -154,8 +155,28 @@ pub const Iterator = struct {
     buf: [1024]u8,
     idx: usize,
     len: usize,
+    seek: c_long,
 
     pub fn next(iter: *Iterator) !?Entry {
+        if (os == .macos) {
+            if (iter.idx == iter.len) {
+                const len = try sys.getdirentries(@intFromEnum(iter.dir.fd), &iter.buf, &iter.seek);
+                if (len == 0) return null;
+                iter.idx = 0;
+                iter.len = len;
+            }
+            const ent: *align(1) sys.struct_dirent = @ptrCast(&iter.buf[iter.idx]);
+            iter.idx += ent.reclen;
+            ent.name[ent.namlen] = 0;
+            const name = ent.name[0..ent.namlen :0];
+            if (std.mem.eql(u8, name, ".")) return next(iter);
+            if (std.mem.eql(u8, name, "..")) return next(iter);
+            if (ent.ino == 0) return next(iter);
+            return .{
+                .name = name,
+                .type = ent.type,
+            };
+        }
         if (iter.idx == iter.len) {
             const len = try sys.getdents(@intFromEnum(iter.dir.fd), &iter.buf);
             if (len == 0) return null;
@@ -328,3 +349,49 @@ pub const AccessMode = packed struct(c_uint) {
     executable: bool = false,
     _: u29 = 0,
 };
+
+pub fn realpath(self: Dir, sub_path: [:0]const u8, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
+    if (std.mem.eql(u8, sub_path, ".")) {
+        if (@intFromEnum(self.fd) == sys.AT.FDCWD) {
+            return nfs.cwdpath(buf);
+        }
+        return nfs.realdpath(self.fd, buf);
+    }
+    var file = try self.openFile(sub_path, .{});
+    defer file.close();
+    return nfs.realdpath(file.fd, buf);
+}
+
+pub fn realpathAlloc(self: Dir, allocator: std.mem.Allocator, sub_path: [:0]const u8) ![:0]u8 {
+    var buf: [sys.PATH_MAX]u8 = undefined;
+    const actual = try self.realpath(sub_path, &buf);
+    return allocator.dupeZ(u8, actual);
+}
+
+pub fn deleteFile(self: Dir, sub_path: [:0]const u8) !void {
+    return sys.unlinkat(@intFromEnum(self.fd), sub_path.ptr, 0);
+}
+
+pub fn deleteDir(self: Dir, sub_path: [:0]const u8) !void {
+    return sys.unlinkat(@intFromEnum(self.fd), sub_path.ptr, sys.AT.REMOVEDIR);
+}
+
+pub fn deleteTree(self: Dir, sub_path: [:0]const u8) !void {
+    var dir = try self.openDir(sub_path, .{});
+    {
+        errdefer dir.close();
+        var iter = dir.iterate();
+        while (try iter.next()) |entry| {
+            switch (entry.type) {
+                .DIR => {
+                    try dir.deleteTree(entry.name);
+                },
+                else => {
+                    try dir.deleteFile(entry.name);
+                },
+            }
+        }
+        dir.close();
+    }
+    try self.deleteDir(sub_path);
+}

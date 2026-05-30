@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const sys_linux = @import("sys-linux");
+const nio = @import("nio");
 
 pub const Dir = @import("./Dir.zig");
 pub const File = @import("./File.zig");
@@ -23,6 +24,12 @@ pub const NAME_MAX = sys.NAME_MAX;
 
 pub fn cwd() Dir {
     return .{ .fd = @enumFromInt(sys.AT.FDCWD) };
+}
+
+pub fn cwdpath(buf: []u8) ![:0]u8 {
+    const ptr = try sys.getcwd(buf);
+    const str = std.mem.sliceTo(ptr, 0);
+    return str;
 }
 
 pub fn stdin() File {
@@ -79,4 +86,19 @@ pub fn pipe2(flag: c_int) ![2]File {
 
 pub fn dup2(fd1: Handle, fd2: Handle) !void {
     return sys.dup2(@intFromEnum(fd1), @intFromEnum(fd2));
+}
+
+pub fn realdpath(fd: Handle, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
+    if (os == .linux) {
+        var dbuf: [64]u8 = undefined;
+        const str = nio.fmt.bufPrintZ(&dbuf, "/proc/self/fd/{d}", .{fd}) catch unreachable;
+        return sys.readlinkat(@intFromEnum(cwd().fd), str, buf);
+    }
+    if (os == .macos) {
+        @memset(buf, 0);
+        const rc = sys.libc.fcntl(@intFromEnum(fd), sys.F.GETPATH, buf.ptr);
+        if (rc == -1) return sys.errno.fromInt(sys.errno.fromLibC());
+        const idx = std.mem.indexOfScalar(u8, buf, 0).?;
+        return buf[0..idx :0];
+    }
 }

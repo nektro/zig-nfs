@@ -211,3 +211,11 @@ pub fn mmap(self: File) ![]const u8 {
 pub fn utime(self: File, times: [2]sys.struct_timespec) !void {
     return sys.futimens(@intFromEnum(self.fd), times);
 }
+
+pub fn isatty(self: File) bool {
+    return sys.libc.isatty(@intFromEnum(self.fd)) == 1;
+}
+
+pub fn seekTo(self: File, pos: u64) !void {
+    return sys.lseek(@intFromEnum(self.fd), @bitCast(pos), sys.SEEK.SET);
+}
