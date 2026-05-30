@@ -395,3 +395,21 @@ pub fn deleteTree(self: Dir, sub_path: [:0]const u8) !void {
     }
     try self.deleteDir(sub_path);
 }
+
+pub fn exists(self: Dir, sub_path: [:0]const u8) !bool {
+    self.access(sub_path, .{}, 0) catch |err| switch (err) {
+        error.ENOENT => return false,
+        else => |e| return e,
+    };
+    return true;
+}
+
+pub fn existsDir(self: Dir, sub_path: [:0]const u8) !bool {
+    var dir = self.openDir(sub_path, .{}) catch |err| switch (err) {
+        error.ENOENT => return false,
+        error.ENOTDIR => return false,
+        else => |e| return e,
+    };
+    dir.close();
+    return true;
+}
