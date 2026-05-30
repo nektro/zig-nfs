@@ -219,3 +219,7 @@ pub fn isatty(self: File) bool {
 pub fn seekTo(self: File, pos: u64) !void {
     return sys.lseek(@intFromEnum(self.fd), @bitCast(pos), sys.SEEK.SET);
 }
+
+pub fn chmod(self: File, mode: Mode) !void {
+    return sys.fchmod(@intFromEnum(self.fd), mode);
+}
