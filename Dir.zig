@@ -413,3 +413,24 @@ pub fn existsDir(self: Dir, sub_path: [:0]const u8) !bool {
     dir.close();
     return true;
 }
+
+pub fn copyFile(source_dir: Dir, source_path: [:0]const u8, dest_dir: Dir, dest_path: [:0]const u8) !void {
+    const source_file = try source_dir.openFile(source_path, .{});
+    defer source_file.close();
+    const source_stat = try source_file.stat();
+
+    const dest_file = try dest_dir.createFile(dest_path, .{ .exclusive = true });
+    defer dest_file.close();
+
+    if (os == .linux) {
+        var off: u64 = 0;
+        var off_in: sys.off_t = 0;
+        var off_out: sys.off_t = 0;
+        while (true) {
+            const amt = try sys.copy_file_range(@intFromEnum(source_file.fd), &off_in, @intFromEnum(dest_file.fd), &off_out, source_stat.size - off, 0);
+            off += amt;
+            if (amt == 0) break;
+        }
+        return;
+    }
+}
