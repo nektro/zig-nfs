@@ -91,7 +91,7 @@ pub fn dup2(fd1: Handle, fd2: Handle) !void {
 pub fn realdpath(fd: Handle, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
     if (os == .linux) {
         var dbuf: [64]u8 = undefined;
-        const str = nio.fmt.bufPrintZ(&dbuf, "/proc/self/fd/{d}", .{fd}) catch unreachable;
+        const str = nio.fmt.bufPrintZ(&dbuf, "/proc/self/fd/{d}", .{@intFromEnum(fd)}) catch unreachable;
         return sys.readlinkat(@intFromEnum(cwd().fd), str, buf);
     }
     if (os == .macos) {
