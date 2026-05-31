@@ -419,7 +419,7 @@ pub fn copyFile(source_dir: Dir, source_path: [:0]const u8, dest_dir: Dir, dest_
     defer source_file.close();
     const source_stat = try source_file.stat();
 
-    const dest_file = try dest_dir.createFile(dest_path, .{ .exclusive = true });
+    const dest_file = try dest_dir.createFile(dest_path, .{ .exclusive = true, .mode = source_stat.mode });
     defer dest_file.close();
 
     if (os == .linux) {
