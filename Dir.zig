@@ -80,6 +80,13 @@ pub fn makeDir(self: Dir, sub_path: [:0]const u8) !void {
 pub fn statFile(self: Dir, sub_path: [:0]const u8) !File.Stat {
     return .fromPosix(try sys.fstatat(@intFromEnum(self.fd), sub_path, 0));
 }
+pub fn statFileC(self: Dir, sub_path: []const u8) !File.Stat {
+    std.debug.assert(sub_path.len <= sys.NAME_MAX);
+    var buf: [sys.NAME_MAX + 1]u8 = undefined;
+    @memcpy(buf[0..sub_path.len], sub_path);
+    buf[sub_path.len] = 0;
+    return statFile(self, buf[0..sub_path.len :0]);
+}
 
 pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
     var it = try std.fs.path.componentIterator(sub_path);
