@@ -227,3 +227,13 @@ pub fn seekTo(self: File, pos: u64) !void {
 pub fn chmod(self: File, mode: Mode) !void {
     return sys.fchmod(@intFromEnum(self.fd), mode);
 }
+
+pub fn realpath(self: File, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
+    return nfs.realdpath(self.fd, buf);
+}
+
+pub fn realpathAlloc(self: File, allocator: std.mem.Allocator) ![:0]u8 {
+    var buf: [sys.PATH_MAX]u8 = undefined;
+    const actual = try self.realpath(&buf);
+    return allocator.dupeZ(u8, actual);
+}
