@@ -41,6 +41,7 @@ pub const readUntilDelimitersArrayList = R.readUntilDelimitersArrayList;
 pub const readAlloc = R.readAlloc;
 pub const readInt = R.readInt;
 pub const readUntilDelimitersAlloc = R.readUntilDelimitersAlloc;
+pub const readUntilDelimiterOrEof = R.readUntilDelimiterOrEof;
 
 pub const ReadError = sys.errno.Error;
 pub fn read(self: File, buffer: []u8) ReadError!usize {
