@@ -42,6 +42,9 @@ pub const readAlloc = R.readAlloc;
 pub const readInt = R.readInt;
 pub const readUntilDelimitersAlloc = R.readUntilDelimitersAlloc;
 pub const readUntilDelimiterOrEof = R.readUntilDelimiterOrEof;
+pub const readExpected = R.readExpected;
+pub const skipBytes = R.skipBytes;
+pub const skipUntilDelimiterOrEof = R.skipUntilDelimiterOrEof;
 
 pub const ReadError = sys.errno.Error;
 pub fn read(self: File, buffer: []u8) ReadError!usize {
