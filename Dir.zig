@@ -29,8 +29,19 @@ pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
         .write_only => sys.O.WRONLY,
         .read_write => sys.O.RDWR,
     };
+    if (os != .linux) oflag |= switch (flags.lock) {
+        .none => 0,
+        .shared => sys.O.SHLOCK,
+        .exclusive => sys.O.EXLOCK,
+    };
     oflag |= sys.O.CLOEXEC;
-    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag)) };
+    const fd = try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag);
+    if (os == .linux) switch (flags.lock) {
+        .none => {},
+        .shared => try sys.flock(fd, sys.LOCK.SH),
+        .exclusive => try sys.flock(fd, sys.LOCK.EX),
+    };
+    return .{ .fd = @enumFromInt(fd) };
 }
 pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
     std.debug.assert(sub_path.len <= sys.PATH_MAX);
@@ -42,6 +53,7 @@ pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
 
 pub const OpenFileFlags = packed struct {
     mode: enum(u8) { read_only, write_only, read_write } = .read_only,
+    lock: enum(u8) { none, shared, exclusive } = .none,
 };
 
 pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
