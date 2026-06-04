@@ -101,7 +101,7 @@ pub fn statFileC(self: Dir, sub_path: []const u8) !File.Stat {
 }
 
 pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
-    var it = try std.fs.path.componentIterator(sub_path);
+    var it = std.fs.path.componentIterator(sub_path);
     var component = it.last() orelse return;
     var zuffer: [sys.NAME_MAX + 1]u8 = undefined;
     while (true) {

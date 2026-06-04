@@ -138,16 +138,6 @@ pub const Stat = struct {
 
     pub fn fromPosix(st: sys.struct_stat) Stat {
         if (os == .linux) {
-            if (builtin.target.cpu.arch.isMIPS64()) {
-                return .{
-                    .inode = st.ino,
-                    .size = @bitCast(st.size),
-                    .mode = st.mode,
-                    .atime = @as(i128, st.atim) * time.ns_per_s + st.atim_nsec,
-                    .mtime = @as(i128, st.mtim) * time.ns_per_s + st.mtim_nsec,
-                    .ctime = @as(i128, st.ctim) * time.ns_per_s + st.ctim_nsec,
-                };
-            }
             return .{
                 .inode = st.ino,
                 .size = @bitCast(st.size),
