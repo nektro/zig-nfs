@@ -44,6 +44,7 @@ pub const readUntilDelimitersAlloc = R.readUntilDelimitersAlloc;
 pub const readUntilDelimiter = R.readUntilDelimiter;
 pub const readUntilDelimiterOrEof = R.readUntilDelimiterOrEof;
 pub const readExpected = R.readExpected;
+pub const readType = R.readType;
 pub const skipBytes = R.skipBytes;
 pub const skipUntilDelimiterOrEof = R.skipUntilDelimiterOrEof;
 
