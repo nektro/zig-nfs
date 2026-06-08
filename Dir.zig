@@ -74,8 +74,8 @@ pub const OpenDirFlags = packed struct {
 };
 
 /// temporary method for interacting with other std apis we don't have our own version of
-pub fn to_std(self: Dir) std.fs.Dir {
-    return .{ .fd = @intFromEnum(self.fd) };
+pub fn to_std(self: Dir) std.Io.Dir {
+    return .{ .handle = @intFromEnum(self.fd) };
 }
 
 pub fn readFileAlloc(self: Dir, allocator: std.mem.Allocator, file_path: [:0]const u8, max_bytes: usize) ![:0]u8 {
