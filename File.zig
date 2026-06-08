@@ -47,6 +47,7 @@ pub const readExpected = R.readExpected;
 pub const readType = R.readType;
 pub const skipBytes = R.skipBytes;
 pub const skipUntilDelimiterOrEof = R.skipUntilDelimiterOrEof;
+pub const pipeTo = R.pipeTo;
 
 pub const ReadError = sys.errno.Error;
 pub fn read(self: File, buffer: []u8) ReadError!usize {
