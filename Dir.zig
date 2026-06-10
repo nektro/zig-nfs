@@ -453,3 +453,7 @@ pub fn copyFile(source_dir: Dir, source_path: [:0]const u8, dest_dir: Dir, dest_
         return;
     }
 }
+
+pub fn dup(self: Dir) !Dir {
+    return .{ .fd = @enumFromInt(try sys.dup(@intFromEnum(self.fd))) };
+}

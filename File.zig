@@ -230,3 +230,7 @@ pub fn realpathAlloc(self: File, allocator: std.mem.Allocator) ![:0]u8 {
     const actual = try self.realpath(&buf);
     return allocator.dupeZ(u8, actual);
 }
+
+pub fn dup(self: File) !File {
+    return .{ .fd = @enumFromInt(try sys.dup(@intFromEnum(self.fd))) };
+}
