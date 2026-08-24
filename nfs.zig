@@ -11,6 +11,9 @@ const os = builtin.target.os.tag;
 const sys = switch (os) {
     .linux => sys_linux,
     .macos => @import("sys-darwin"),
+    .freebsd => @import("sys-freebsd"),
+    .netbsd => @import("sys-netbsd"),
+    .openbsd => @import("sys-openbsd"),
     else => unreachable,
 };
 
@@ -54,22 +57,21 @@ pub fn munmap(region: []const u8) void {
     return sys.munmap(region.ptr, region.len) catch {};
 }
 
-pub fn mkdtemp() !Dir {
-    var template = "/tmp/tmp.XXXXXXXXXX\x00".*;
+pub fn mktemp_buf() [19:0]u8 {
+    var template: [19:0]u8 = "/tmp/tmp.XXXXXXXXXX".*;
     const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const rand = nio.randomBytes(10);
-    if (rand.len != 10) return error.EAGAIN;
     for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
-    const path = template[0 .. template.len - 1 :0];
+    return template;
+}
+
+pub fn mkdtemp() !Dir {
+    const path = &mktemp_buf();
     return cwd().makeOpenPath(path, .{});
 }
 
 pub fn mktemp(flags: Dir.CreateFlags) !File {
-    var template = "/tmp/tmp.XXXXXXXXXX\x00".*;
-    const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    const rand = nio.randomBytes(10);
-    for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
-    const path = template[0 .. template.len - 1 :0];
+    const path = &mktemp_buf();
     var _flags = flags;
     _flags.exclusive = true;
     return cwd().createFile(path, _flags);
@@ -93,11 +95,18 @@ pub fn realdpath(fd: Handle, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
         const str = nio.fmt.bufPrintZ(&dbuf, "/proc/self/fd/{d}", .{@intFromEnum(fd)}) catch unreachable;
         return sys.readlinkat(@intFromEnum(cwd().fd), str, buf);
     }
-    if (os == .macos) {
+    if (os == .macos or os == .netbsd) {
         @memset(buf, 0);
         const rc = sys.libc.fcntl(@intFromEnum(fd), sys.F.GETPATH, buf.ptr);
         if (rc == -1) return sys.errno.fromInt(sys.errno.fromLibC());
         const idx = std.mem.indexOfScalar(u8, buf, 0).?;
         return buf[0..idx :0];
+    }
+    if (os == .freebsd) {
+        // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=198570
+        comptime unreachable; // TODO
+    }
+    if (os == .openbsd) {
+        comptime unreachable;
     }
 }

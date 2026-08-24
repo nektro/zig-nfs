@@ -12,6 +12,9 @@ const os = builtin.target.os.tag;
 const sys = switch (os) {
     .linux => @import("sys-linux"),
     .macos => @import("sys-darwin"),
+    .freebsd => @import("sys-freebsd"),
+    .netbsd => @import("sys-netbsd"),
+    .openbsd => @import("sys-openbsd"),
     else => unreachable,
 };
 
@@ -139,16 +142,6 @@ pub const Stat = struct {
     ctime: i128,
 
     pub fn fromPosix(st: sys.struct_stat) Stat {
-        if (os == .linux) {
-            return .{
-                .inode = st.ino,
-                .size = @bitCast(st.size),
-                .mode = st.mode,
-                .atime = @as(i128, st.atim.sec) * time.ns_per_s + st.atim.nsec,
-                .mtime = @as(i128, st.mtim.sec) * time.ns_per_s + st.mtim.nsec,
-                .ctime = @as(i128, st.ctim.sec) * time.ns_per_s + st.ctim.nsec,
-            };
-        }
         if (os == .macos) {
             return .{
                 .inode = st.ino,
@@ -159,6 +152,14 @@ pub const Stat = struct {
                 .ctime = @as(i128, st.ctimespec.sec) * time.ns_per_s + st.ctimespec.nsec,
             };
         }
+        return .{
+            .inode = st.ino,
+            .size = @bitCast(st.size),
+            .mode = st.mode,
+            .atime = @as(i128, st.atim.sec) * time.ns_per_s + st.atim.nsec,
+            .mtime = @as(i128, st.mtim.sec) * time.ns_per_s + st.mtim.nsec,
+            .ctime = @as(i128, st.ctim.sec) * time.ns_per_s + st.ctim.nsec,
+        };
     }
 
     pub fn kind(self: Stat) Kind {
@@ -192,16 +193,22 @@ pub const Kind = enum {
     unknown,
 };
 
-/// Maps file content into memory with a single syscall.
-/// If length is null it will also call stat.
+/// Maps entire file content into memory with a single syscall.
+/// Release with `nfs.munmap`.
 pub fn mmap(self: File) ![]const u8 {
+    return mmapRegion(self, 0, (try self.stat()).size);
+}
+
+/// Maps file content into memory with a single syscall.
+/// Release with `nfs.munmap`.
+pub fn mmapRegion(self: File, offset: sys.off_t, len: usize) ![]const u8 {
     return sys.mmap(
         null,
-        (try self.stat()).size,
+        len,
         sys.PROT.READ,
         sys.MAP.PRIVATE,
         @intFromEnum(self.fd),
-        0,
+        offset,
     );
 }
 
