@@ -70,7 +70,9 @@ pub fn mktemp(flags: Dir.CreateFlags) !File {
     const rand = nio.randomBytes(10);
     for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
     const path = template[0 .. template.len - 1 :0];
-    return cwd().createFile(path, flags);
+    var _flags = flags;
+    _flags.exclusive = true;
+    return cwd().createFile(path, _flags);
 }
 
 pub fn pipe2(flag: c_int) ![2]File {
