@@ -57,8 +57,7 @@ pub fn munmap(region: []const u8) void {
 pub fn mkdtemp() !Dir {
     var template = "/tmp/tmp.XXXXXXXXXX\x00".*;
     const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    var buf: [10]u8 = @splat(0);
-    const rand = try sys.getrandom(&buf, 0);
+    const rand = nio.randomBytes(10);
     if (rand.len != 10) return error.EAGAIN;
     for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
     const path = template[0 .. template.len - 1 :0];
@@ -68,9 +67,7 @@ pub fn mkdtemp() !Dir {
 pub fn mktemp(flags: Dir.CreateFlags) !File {
     var template = "/tmp/tmp.XXXXXXXXXX\x00".*;
     const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    var buf: [10]u8 = @splat(0);
-    const rand = try sys.getrandom(&buf, 0);
-    if (rand.len != 10) return error.EAGAIN;
+    const rand = nio.randomBytes(10);
     for (template[9..][0..10], rand) |*a, b| a.* = letters[b % 62];
     const path = template[0 .. template.len - 1 :0];
     return cwd().createFile(path, flags);
