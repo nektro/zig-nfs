@@ -54,7 +54,7 @@ pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
     return openFile(self, buf[0..sub_path.len :0], flags);
 }
 
-pub const OpenFileFlags = packed struct {
+pub const OpenFileFlags = struct {
     mode: enum(u8) { read_only, write_only, read_write } = .read_only,
     lock: enum(u8) { none, shared, exclusive } = .none,
 };
@@ -72,7 +72,7 @@ pub fn openDirC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir {
     return openDir(self, buf[0..sub_path.len :0], flags);
 }
 
-pub const OpenDirFlags = packed struct {
+pub const OpenDirFlags = struct {
     //
 };
 
