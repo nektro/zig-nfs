@@ -121,7 +121,7 @@ pub fn makePath(self: Dir, sub_path: [:0]const u8) !void {
                         error.EISDIR => break :check_dir,
                         else => |e| return e,
                     };
-                    if (fstat.kind() != .directory) return error.NotDir;
+                    if (fstat.kind() != .DIR) return error.NotDir;
                 }
             },
             error.ENOENT => |e| {

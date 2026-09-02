@@ -162,19 +162,20 @@ pub const Stat = struct {
         };
     }
 
-    pub fn kind(self: Stat) Kind {
+    pub fn kind(self: Stat) sys.DT {
         const m = self.mode & sys.S.IFMT;
         switch (m) {
-            sys.S.IFBLK => return .block_device,
-            sys.S.IFCHR => return .character_device,
-            sys.S.IFIFO => return .named_pipe,
-            sys.S.IFREG => return .file,
-            sys.S.IFDIR => return .directory,
-            sys.S.IFLNK => return .symlink,
-            sys.S.IFSOCK => return .unix_socket,
+            sys.S.IFBLK => return .BLK,
+            sys.S.IFCHR => return .CHR,
+            sys.S.IFIFO => return .FIFO,
+            sys.S.IFREG => return .REG,
+            sys.S.IFDIR => return .DIR,
+            sys.S.IFLNK => return .LNK,
+            sys.S.IFSOCK => return .SOCK,
+            sys.S.IFWHT => return .WHT,
             else => {},
         }
-        return .unknown;
+        return .UNKNOWN;
     }
 };
 
@@ -182,16 +183,7 @@ pub const INode = sys.ino_t;
 
 pub const Mode = sys.mode_t;
 
-pub const Kind = enum {
-    block_device,
-    character_device,
-    named_pipe,
-    file,
-    directory,
-    symlink,
-    unix_socket,
-    unknown,
-};
+pub const Kind = sys.DT;
 
 /// Maps entire file content into memory with a single syscall.
 /// Release with `nfs.munmap`.
