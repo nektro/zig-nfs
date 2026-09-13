@@ -26,7 +26,7 @@ fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: File) void {
-    sys.close(@intFromEnum(self.fd)) catch {};
+    sys.close(@intFromEnum(self.fd)) catch if (builtin.mode == .Debug) unreachable;
 }
 
 const R = nio.Readable(@This(), ._bare);

@@ -22,7 +22,7 @@ fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: Dir) void {
-    return sys.close(@intFromEnum(self.fd)) catch {};
+    return sys.close(@intFromEnum(self.fd)) catch if (builtin.mode == .Debug) unreachable;
 }
 
 pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
