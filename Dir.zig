@@ -22,7 +22,7 @@ fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: Dir) void {
-    return sys.close(@intFromEnum(self.fd)) catch if (builtin.mode == .Debug) unreachable;
+    return sys.close(@backingInt(self.fd)) catch if (builtin.mode == .debug) unreachable;
 }
 
 pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
@@ -38,13 +38,13 @@ pub fn openFile(self: Dir, sub_path: [:0]const u8, flags: OpenFileFlags) !File {
         .exclusive => sys.O.EXLOCK,
     };
     oflag |= sys.O.CLOEXEC;
-    const fd = try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag);
+    const fd = try sys.openat(@backingInt(self.fd), sub_path.ptr, oflag);
     if (os == .linux) switch (flags.lock) {
         .none => {},
         .shared => try sys.flock(fd, sys.LOCK.SH),
         .exclusive => try sys.flock(fd, sys.LOCK.EX),
     };
-    return .{ .fd = @enumFromInt(fd) };
+    return .{ .fd = @fromBackingInt(@intCast(fd)) };
 }
 pub fn openFileC(self: Dir, sub_path: []const u8, flags: OpenFileFlags) !File {
     std.debug.assert(sub_path.len <= sys.PATH_MAX);
@@ -62,7 +62,7 @@ pub const OpenFileFlags = struct {
 pub fn openDir(self: Dir, sub_path: [:0]const u8, flags: OpenDirFlags) !Dir {
     const oflag: c_int = sys.O.RDONLY | sys.O.DIRECTORY;
     _ = flags;
-    return .{ .fd = @enumFromInt(try sys.openat(@intFromEnum(self.fd), sub_path.ptr, oflag)) };
+    return .{ .fd = @fromBackingInt(@intCast(try sys.openat(@backingInt(self.fd), sub_path.ptr, oflag))) };
 }
 pub fn openDirC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir {
     std.debug.assert(sub_path.len <= sys.NAME_MAX);
@@ -78,7 +78,7 @@ pub const OpenDirFlags = struct {
 
 /// temporary method for interacting with other std apis we don't have our own version of
 pub fn to_std(self: Dir) std.Io.Dir {
-    return .{ .handle = @intFromEnum(self.fd) };
+    return .{ .handle = @backingInt(self.fd) };
 }
 
 pub fn readFileAlloc(self: Dir, allocator: std.mem.Allocator, file_path: [:0]const u8, max_bytes: usize) ![:0]u8 {
@@ -89,11 +89,11 @@ pub fn readFileAlloc(self: Dir, allocator: std.mem.Allocator, file_path: [:0]con
 }
 
 pub fn makeDir(self: Dir, sub_path: [:0]const u8) !void {
-    try sys.mkdirat(@intFromEnum(self.fd), sub_path, 0o755);
+    try sys.mkdirat(@backingInt(self.fd), sub_path, 0o755);
 }
 
 pub fn statFile(self: Dir, sub_path: [:0]const u8) !File.Stat {
-    return .fromPosix(try sys.fstatat(@intFromEnum(self.fd), sub_path, 0));
+    return .fromPosix(try sys.fstatat(@backingInt(self.fd), sub_path, 0));
 }
 pub fn statFileC(self: Dir, sub_path: []const u8) !File.Stat {
     std.debug.assert(sub_path.len <= sys.NAME_MAX);
@@ -159,7 +159,7 @@ pub fn makeOpenPathC(self: Dir, sub_path: []const u8, flags: OpenDirFlags) !Dir 
 }
 
 pub fn readlink(self: Dir, noalias sub_path: [:0]const u8, noalias buf: []u8) ![:0]u8 {
-    return sys.readlinkat(@intFromEnum(self.fd), sub_path, buf);
+    return sys.readlinkat(@backingInt(self.fd), sub_path, buf);
 }
 
 pub fn iterate(self: Dir) Iterator {
@@ -182,7 +182,7 @@ pub const Iterator = struct {
     pub fn next(iter: *Iterator) !?Entry {
         if (os == .macos) {
             if (iter.idx == iter.len) {
-                const len = try sys.getdirentries(@intFromEnum(iter.dir.fd), &iter.buf, &iter.seek);
+                const len = try sys.getdirentries(@backingInt(iter.dir.fd), &iter.buf, &iter.seek);
                 if (len == 0) return null;
                 iter.idx = 0;
                 iter.len = len;
@@ -200,7 +200,7 @@ pub const Iterator = struct {
             };
         }
         if (iter.idx == iter.len) {
-            const len = try sys.getdents(@intFromEnum(iter.dir.fd), &iter.buf);
+            const len = try sys.getdents(@backingInt(iter.dir.fd), &iter.buf);
             if (len == 0) return null;
             iter.idx = 0;
             iter.len = len;
@@ -319,7 +319,7 @@ pub const Walker = struct {
 };
 
 pub fn rename(self: Dir, old: [:0]const u8, new: [:0]const u8) !void {
-    return sys.renameat(@intFromEnum(self.fd), old.ptr, @intFromEnum(self.fd), new.ptr);
+    return sys.renameat(@backingInt(self.fd), old.ptr, @backingInt(self.fd), new.ptr);
 }
 pub fn renameC(self: Dir, old: []const u8, new: []const u8) !void {
     std.debug.assert(old.len <= sys.NAME_MAX);
@@ -340,7 +340,7 @@ pub fn createFile(self: Dir, sub_path: [:0]const u8, flags: CreateFlags) !File {
     if (flags.truncate) oflag |= sys.O.TRUNC;
     if (flags.exclusive) oflag |= sys.O.EXCL;
     oflag |= sys.O.CLOEXEC;
-    return .{ .fd = @enumFromInt(try sys.openat4(@intFromEnum(self.fd), sub_path.ptr, oflag, flags.mode)) };
+    return .{ .fd = @fromBackingInt(@intCast(try sys.openat4(@backingInt(self.fd), sub_path.ptr, oflag, flags.mode))) };
 }
 pub fn createFileC(self: Dir, sub_path: []const u8, flags: CreateFlags) !File {
     std.debug.assert(sub_path.len <= sys.PATH_MAX);
@@ -362,7 +362,7 @@ pub const CreateFlags = packed struct {
 };
 
 pub fn access(self: Dir, sub_path: [:0]const u8, amode: AccessMode, flag: c_int) !void {
-    return sys.faccessat(@intFromEnum(self.fd), sub_path, @bitCast(amode), flag);
+    return sys.faccessat(@backingInt(self.fd), sub_path, @bitCast(amode), flag);
 }
 
 pub const AccessMode = packed struct(c_uint) {
@@ -374,7 +374,7 @@ pub const AccessMode = packed struct(c_uint) {
 
 pub fn realpath(self: Dir, sub_path: [:0]const u8, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
     if (std.mem.eql(u8, sub_path, ".")) {
-        if (@intFromEnum(self.fd) == sys.AT.FDCWD) {
+        if (@backingInt(self.fd) == sys.AT.FDCWD) {
             return nfs.cwdpath(buf);
         }
         return nfs.realdpath(self.fd, buf);
@@ -387,15 +387,15 @@ pub fn realpath(self: Dir, sub_path: [:0]const u8, buf: *[sys.PATH_MAX]u8) ![:0]
 pub fn realpathAlloc(self: Dir, allocator: std.mem.Allocator, sub_path: [:0]const u8) ![:0]u8 {
     var buf: [sys.PATH_MAX]u8 = undefined;
     const actual = try self.realpath(sub_path, &buf);
-    return allocator.dupeZ(u8, actual);
+    return allocator.dupeSentinel(u8, actual, 0);
 }
 
 pub fn deleteFile(self: Dir, sub_path: [:0]const u8) !void {
-    return sys.unlinkat(@intFromEnum(self.fd), sub_path.ptr, 0);
+    return sys.unlinkat(@backingInt(self.fd), sub_path.ptr, 0);
 }
 
 pub fn deleteDir(self: Dir, sub_path: [:0]const u8) !void {
-    return sys.unlinkat(@intFromEnum(self.fd), sub_path.ptr, sys.AT.REMOVEDIR);
+    return sys.unlinkat(@backingInt(self.fd), sub_path.ptr, sys.AT.REMOVEDIR);
 }
 
 pub fn deleteTree(self: Dir, sub_path: [:0]const u8) !void {
@@ -449,7 +449,7 @@ pub fn copyFile(source_dir: Dir, source_path: [:0]const u8, dest_dir: Dir, dest_
         var off_in: sys.off_t = 0;
         var off_out: sys.off_t = 0;
         while (true) {
-            const amt = try sys.copy_file_range(@intFromEnum(source_file.fd), &off_in, @intFromEnum(dest_file.fd), &off_out, source_stat.size - off, 0);
+            const amt = try sys.copy_file_range(@backingInt(source_file.fd), &off_in, @backingInt(dest_file.fd), &off_out, source_stat.size - off, 0);
             off += amt;
             if (amt == 0) break;
         }
@@ -458,5 +458,5 @@ pub fn copyFile(source_dir: Dir, source_path: [:0]const u8, dest_dir: Dir, dest_
 }
 
 pub fn dup(self: Dir) !Dir {
-    return .{ .fd = @enumFromInt(try sys.dup(@intFromEnum(self.fd))) };
+    return .{ .fd = @fromBackingInt(@intCast(try sys.dup(@backingInt(self.fd)))) };
 }

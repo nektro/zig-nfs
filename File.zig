@@ -26,7 +26,7 @@ fd: nfs.Handle,
 
 // Resource allocation may fail; resource deallocation must succeed.
 pub fn close(self: File) void {
-    sys.close(@intFromEnum(self.fd)) catch if (builtin.mode == .Debug) unreachable;
+    sys.close(@backingInt(self.fd)) catch if (builtin.mode == .debug) unreachable;
 }
 
 const R = nio.Readable(@This(), ._bare);
@@ -55,25 +55,25 @@ pub const pipeTo = R.pipeTo;
 
 pub const ReadError = sys.errno.Error;
 pub fn read(self: File, buffer: []u8) ReadError!usize {
-    return sys.read(@intFromEnum(self.fd), buffer);
+    return sys.read(@backingInt(self.fd), buffer);
 }
 
 pub fn anyReadable(self: File) nio.AnyReadable {
     const S = struct {
         fn read(s: *allowzero anyopaque, buffer: []u8) anyerror!usize {
-            const fd: nfs.Handle = @enumFromInt(@intFromPtr(s));
+            const fd: nfs.Handle = @fromBackingInt(@intCast(@intFromPtr(s)));
             const f: File = .{ .fd = fd };
             return f.read(buffer);
         }
     };
     return .{
         .vtable = &.{ .read = S.read },
-        .state = @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(@intFromEnum(self.fd)))))),
+        .state = @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(@backingInt(self.fd)))))),
     };
 }
 
 pub fn stat(self: File) !Stat {
-    return .fromPosix(try sys.fstat(@intFromEnum(self.fd)));
+    return .fromPosix(try sys.fstat(@backingInt(self.fd)));
 }
 
 pub fn getEndPos(self: File) !u64 {
@@ -125,10 +125,10 @@ pub const print = W.print;
 
 pub const WriteError = sys.errno.Error;
 pub fn write(self: File, buffer: []const u8) WriteError!usize {
-    return sys.write(@intFromEnum(self.fd), buffer);
+    return sys.write(@backingInt(self.fd), buffer);
 }
 pub fn writev(self: File, iovec: []const sys.struct_iovec) WriteError!usize {
-    return sys.writev(@intFromEnum(self.fd), iovec);
+    return sys.writev(@backingInt(self.fd), iovec);
 }
 
 pub const Stat = struct {
@@ -200,25 +200,25 @@ pub fn mmapRegion(self: File, offset: sys.off_t, len: usize) ![]const u8 {
         len,
         sys.PROT.READ,
         sys.MAP.PRIVATE,
-        @intFromEnum(self.fd),
+        @backingInt(self.fd),
         offset,
     );
 }
 
 pub fn utime(self: File, times: [2]sys.struct_timespec) !void {
-    return sys.futimens(@intFromEnum(self.fd), times);
+    return sys.futimens(@backingInt(self.fd), times);
 }
 
 pub fn isatty(self: File) bool {
-    return sys.libc.isatty(@intFromEnum(self.fd)) == 1;
+    return sys.libc.isatty(@backingInt(self.fd)) == 1;
 }
 
 pub fn seekTo(self: File, pos: u64) !void {
-    return sys.lseek(@intFromEnum(self.fd), @bitCast(pos), sys.SEEK.SET);
+    return sys.lseek(@backingInt(self.fd), @bitCast(pos), sys.SEEK.SET);
 }
 
 pub fn chmod(self: File, mode: Mode) !void {
-    return sys.fchmod(@intFromEnum(self.fd), mode);
+    return sys.fchmod(@backingInt(self.fd), mode);
 }
 
 pub fn realpath(self: File, buf: *[sys.PATH_MAX]u8) ![:0]u8 {
@@ -232,5 +232,5 @@ pub fn realpathAlloc(self: File, allocator: std.mem.Allocator) ![:0]u8 {
 }
 
 pub fn dup(self: File) !File {
-    return .{ .fd = @enumFromInt(try sys.dup(@intFromEnum(self.fd))) };
+    return .{ .fd = @fromBackingInt(@intCast(try sys.dup(@backingInt(self.fd)))) };
 }
