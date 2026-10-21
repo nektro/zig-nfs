@@ -4,10 +4,6 @@ main: nfs.zig
 license: MPL-2.0
 description: Nektro's Filesystem, an alternative to std.fs
 dependencies:
-  - src: git https://github.com/nektro/zig-sys-linux
+  - src: git https://git.nektro.net/lib/zig/sys/
   - src: git https://github.com/nektro/zig-nio
   - src: git https://github.com/nektro/zig-time
-  - src: git https://github.com/nektro/zig-sys-darwin
-  - src: git https://github.com/nektro/zig-sys-freebsd
-  - src: git https://github.com/nektro/zig-sys-netbsd
-  - src: git https://github.com/nektro/zig-sys-openbsd

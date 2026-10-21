@@ -2,21 +2,13 @@ const std = @import("std");
 const builtin = @import("builtin");
 const nio = @import("nio");
 const time = @import("time");
+const sys = @import("sys").impl;
 
 const nfs = @import("./nfs.zig");
 const Dir = nfs.Dir;
 const File = @This();
 
 const os = builtin.target.os.tag;
-
-const sys = switch (os) {
-    .linux => @import("sys-linux"),
-    .macos => @import("sys-darwin"),
-    .freebsd => @import("sys-freebsd"),
-    .netbsd => @import("sys-netbsd"),
-    .openbsd => @import("sys-openbsd"),
-    else => unreachable,
-};
 
 pub const stdin = nfs.stdin;
 pub const stdout = nfs.stdout;

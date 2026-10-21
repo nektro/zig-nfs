@@ -1,21 +1,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const sys_linux = @import("sys-linux");
+const sys = @import("sys").impl;
 const nio = @import("nio");
 
 pub const Dir = @import("./Dir.zig");
 pub const File = @import("./File.zig");
 
 const os = builtin.target.os.tag;
-
-const sys = switch (os) {
-    .linux => sys_linux,
-    .macos => @import("sys-darwin"),
-    .freebsd => @import("sys-freebsd"),
-    .netbsd => @import("sys-netbsd"),
-    .openbsd => @import("sys-openbsd"),
-    else => unreachable,
-};
 
 pub const Handle = enum(c_int) {
     _,
