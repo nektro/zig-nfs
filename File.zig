@@ -123,6 +123,20 @@ pub fn writev(self: File, iovec: []const sys.struct_iovec) WriteError!usize {
     return sys.writev(@backingInt(self.fd), iovec);
 }
 
+pub fn anyWritable(self: File) nio.AnyWritable {
+    const S = struct {
+        fn write(s: *allowzero anyopaque, buffer: []const u8) anyerror!usize {
+            const fd: nfs.Handle = @fromBackingInt(@intCast(@intFromPtr(s)));
+            const f: File = .{ .fd = fd };
+            return f.write(buffer);
+        }
+    };
+    return .{
+        .vtable = &.{ .write = S.write },
+        .state = @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(@backingInt(self.fd)))))),
+    };
+}
+
 pub const Stat = struct {
     inode: INode,
     size: u64,
